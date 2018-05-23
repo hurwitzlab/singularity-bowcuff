@@ -1,0 +1,48 @@
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# 
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+
+BootStrap: debootstrap
+OSVersion: trusty
+MirrorURL: http://us.archive.ubuntu.com/ubuntu/ 
+
+%environment
+#    PATH="/bowtie-samtools/scripts:${PATH}"
+
+%runscript
+    exec bowtie2 "$@"
+
+%post
+	
+	echo "Hello from inside the container"
+    sed -i 's/$/ universe/' /etc/apt/sources.list
+    #essential stuff
+    apt update
+    apt -y --force-yes install git sudo man vim build-essential wget unzip
+    #needed for bowtie2
+    apt -y --force-yes install libtbb-dev
+
+    # Clean up
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    
+    wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+    bash Miniconda2-latest-Linux-x86_64.sh -b -f -p /usr/local/
+    rm Miniconda2-latest-Linux-x86_64.sh
+    
+    # Get core programs
+    conda install -c bioconda -y biopython samtools bowtie2 cufflinks
+    
+    #so we dont get those stupid perl warnings
+    locale-gen en_US.UTF-8
+    
+    # Set bind points
+    mkdir -p /extra
+    mkdir -p /xdisk
+    mkdir -p /rsgrps
+    mkdir -p /cm/shared
+    
+    #for ubuntu vbox vagrant
+    #comment out once ready for deployment
+    mkdir /vagrant
